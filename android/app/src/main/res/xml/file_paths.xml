@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Requis par image_cropper pour accéder aux fichiers temporaires -->
+<paths>
+    <external-path name="external_files" path="." />
+    <cache-path name="cache" path="." />
+</paths>

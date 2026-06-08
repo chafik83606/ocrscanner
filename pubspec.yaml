@@ -1,0 +1,71 @@
+name: ocr_scanner
+description: Application de scan de documents avec OCR, version gratuite et Premium.
+publish_to: 'none'
+version: 1.0.3+7
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Navigation & state management
+  provider: ^6.1.2
+  go_router: ^13.2.0
+
+  # Camera & image
+  camera: ^0.10.5+9
+  image_picker: ^1.1.2
+  image_picker_android: ^0.8.13
+  image_picker_platform_interface: ^2.11.0
+  image_cropper: ^7.0.3
+  image: ^4.1.7
+
+  # OCR (latin uniquement — évite le méta-paquet google_ml_kit et ses .so inutiles)
+  google_mlkit_text_recognition: ^0.15.1
+
+  # Stockage local
+  sqflite: ^2.3.3+1
+  path_provider: ^2.1.3
+  path: ^1.9.0
+  shared_preferences: ^2.3.2
+
+  # Export / partage
+  share_plus: ^9.0.0
+  pdf: ^3.10.8
+  printing: ^5.12.0
+
+  # Publicités
+  google_mobile_ads: ^5.1.0
+
+  # Achats in-app
+  in_app_purchase: ^3.2.0
+
+  # Utilitaires UI
+  flutter_svg: ^2.0.10+1
+  lottie: ^3.1.2
+  permission_handler: ^11.3.1
+  intl: ^0.19.0
+  uuid: ^4.4.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/app_icon.png
+  adaptive_icon_background: "#1565C0"
+  adaptive_icon_foreground: assets/icon/app_icon.png

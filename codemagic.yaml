@@ -1,0 +1,30 @@
+# Codemagic — build iOS pour OCR Scanner
+# Configurer dans Codemagic : intégration Git + certificats iOS (App Store Connect).
+# https://docs.codemagic.io/flutter/flutter-projects/
+
+workflows:
+  ios-release:
+    name: OCR Scanner iOS
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.ctre2.ocrscanner
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Configurer la signature Xcode
+        script: xcode-project use-profiles
+      - name: Dépendances Flutter
+        script: flutter pub get
+      - name: CocoaPods
+        script: |
+          cd ios
+          pod install
+      - name: Build IPA
+        script: flutter build ipa --release
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
