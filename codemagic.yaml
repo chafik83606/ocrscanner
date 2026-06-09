@@ -20,11 +20,9 @@ workflows:
       - name: Dépendances Flutter
         script: flutter pub get
       - name: CocoaPods
-        script: |
-          cd ios
-          pod install
+        script: find . -name "Podfile" -execdir pod install \;
       - name: Build IPA
-        script: flutter build ipa --release
+        script: flutter build ipa
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
