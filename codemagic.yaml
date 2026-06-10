@@ -1,16 +1,16 @@
-# Codemagic — build iOS + upload App Store Connect (même modèle que SoinZen)
+# Codemagic — build iOS + upload App Store Connect
 # Prérequis Codemagic :
-#   - Groupe d'env "app_store_connect" (APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, APP_STORE_CONNECT_PRIVATE_KEY)
-#   - Code signing : certificat soinzen_ios_distribution_cert + profil App Store pour com.ctre2.ocrscanner
+#   - Team settings → Integrations → Developer Portal (clé API connectée)
+#   - Code signing : soinzen_ios_distribution_cert + profil ocr_scanner
 
 workflows:
   ios-release:
     name: OCR Scanner iOS
     max_build_duration: 120
     instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: codemagic-ios-release-v2
     environment:
-      groups:
-        - app_store_connect
       flutter: stable
       xcode: latest
       cocoapods: default
@@ -84,38 +84,6 @@ workflows:
             exit 1
           fi
           echo "IPA ready: $IPA_PATH"
-          echo "$IPA_PATH" > /tmp/ipa_path.txt
-
-      - name: Upload to App Store Connect
-        script: |
-          set -e
-          echo "=== Upload to App Store Connect ==="
-          IPA_PATH=""
-          if [ -f /tmp/ipa_path.txt ]; then
-            IPA_PATH=$(cat /tmp/ipa_path.txt)
-          fi
-          if [ -z "$IPA_PATH" ] || [ ! -f "$IPA_PATH" ]; then
-            IPA_PATH=$(find build -name "*.ipa" -type f 2>/dev/null | head -n1)
-          fi
-          if [ -z "$IPA_PATH" ] || [ ! -f "$IPA_PATH" ]; then
-            echo "ERROR: No IPA found under build/"
-            exit 1
-          fi
-          echo "Found IPA: $IPA_PATH"
-
-          if [ -z "$APP_STORE_CONNECT_API_KEY" ] || [ -z "$APP_STORE_CONNECT_API_ISSUER" ] || [ -z "$APP_STORE_CONNECT_PRIVATE_KEY" ]; then
-            echo "ERROR: Missing App Store Connect credentials in app_store_connect group."
-            exit 1
-          fi
-
-          mkdir -p "$HOME/.private_keys"
-          KEY_FILE="$HOME/.private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY}.p8"
-          printf '%s\n' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$KEY_FILE"
-          chmod 600 "$KEY_FILE"
-          xcrun altool --upload-app -f "$IPA_PATH" --type ios \
-            --apiKey "$APP_STORE_CONNECT_API_KEY" \
-            --apiIssuer "$APP_STORE_CONNECT_API_ISSUER"
-          echo "=== Upload finished ==="
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -125,3 +93,9 @@ workflows:
       cache_paths:
         - "$HOME/.pub-cache"
         - "$HOME/Library/Caches/CocoaPods"
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
