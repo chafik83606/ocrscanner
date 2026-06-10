@@ -16,7 +16,7 @@ workflows:
       cocoapods: default
       ios_signing:
         provisioning_profiles:
-          - ocrscanner_ios_appstore_profile
+          - ocr_scanner
         certificates:
           - soinzen_ios_distribution_cert
     scripts:
