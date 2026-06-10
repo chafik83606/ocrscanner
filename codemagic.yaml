@@ -1,6 +1,7 @@
-# Codemagic — build iOS pour OCR Scanner
-# Configurer dans Codemagic : intégration Git + certificats iOS (App Store Connect).
-# https://docs.codemagic.io/flutter/flutter-projects/
+# Codemagic — build iOS + upload App Store Connect (même modèle que SoinZen)
+# Prérequis Codemagic :
+#   - Groupe d'env "app_store_connect" (APP_STORE_CONNECT_API_KEY, APP_STORE_CONNECT_API_ISSUER, APP_STORE_CONNECT_PRIVATE_KEY)
+#   - Code signing : certificat soinzen_ios_distribution_cert + profil App Store pour com.ctre2.ocrscanner
 
 workflows:
   ios-release:
@@ -8,23 +9,119 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m2
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.ctre2.ocrscanner
+      groups:
+        - app_store_connect
       flutter: stable
       xcode: latest
       cocoapods: default
+      ios_signing:
+        provisioning_profiles:
+          - ocrscanner_ios_appstore_profile
+        certificates:
+          - soinzen_ios_distribution_cert
     scripts:
-      - name: Configurer la signature Xcode
-        script: xcode-project use-profiles
-      - name: Dépendances Flutter
+      - name: Set up Flutter
         script: |
+          set -e
+          echo "Workflow: ios-release (codemagic.yaml)"
           flutter config --no-enable-swift-package-manager
+          rm -rf build/ios/SourcePackages || true
+          rm -rf ~/Library/Caches/org.swift.swiftpm || true
+          flutter clean
           flutter pub get
-      - name: CocoaPods
-        script: cd ios && pod install --repo-update
-      - name: Build IPA
-        script: flutter build ipa
+
+      - name: Install iOS CocoaPods
+        script: |
+          set -e
+          cd ios
+          pod install --repo-update
+          cd ..
+
+      - name: Set up code signing settings on Xcode project
+        script: |
+          set -e
+          xcode-project use-profiles --project ios/Runner.xcodeproj
+          echo "=== Provisioning profiles on build machine ==="
+          for f in "$HOME/Library/MobileDevice/Provisioning Profiles"/*.mobileprovision; do
+            [ -f "$f" ] || continue
+            security cms -D -i "$f" -o /tmp/prov.plist 2>/dev/null || continue
+            NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /tmp/prov.plist 2>/dev/null || echo "?")
+            APP_ID=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' /tmp/prov.plist 2>/dev/null || echo "?")
+            echo "  - $NAME | $APP_ID"
+          done
+
+      - name: Prepare ExportOptions for IPA
+        script: |
+          set -e
+          BUNDLE_ID="com.ctre2.ocrscanner"
+          PROFILE_NAME=""
+          for f in "$HOME/Library/MobileDevice/Provisioning Profiles"/*.mobileprovision; do
+            [ -f "$f" ] || continue
+            security cms -D -i "$f" -o /tmp/prov.plist 2>/dev/null || continue
+            APP_ID=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' /tmp/prov.plist 2>/dev/null || echo "")
+            echo "$APP_ID" | grep -q "$BUNDLE_ID" || continue
+            PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /tmp/prov.plist)
+            break
+          done
+          if [ -z "$PROFILE_NAME" ]; then
+            echo "ERROR: No App Store provisioning profile found for $BUNDLE_ID."
+            echo "Upload the profile in Codemagic → Code signing → iOS provisioning profiles."
+            exit 1
+          fi
+          echo "Export will use profile: $PROFILE_NAME"
+          /usr/libexec/PlistBuddy -c "Set :provisioningProfiles:$BUNDLE_ID $PROFILE_NAME" ios/ExportOptions.plist
+
+      - name: Build iOS IPA
+        script: |
+          set -e
+          echo "=== Building iOS IPA ==="
+          flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
+          echo "=== Build finished ==="
+          IPA_PATH=$(find build -name "*.ipa" -type f 2>/dev/null | head -n1)
+          if [ -z "$IPA_PATH" ]; then
+            echo "ERROR: flutter build ipa finished but no .ipa was produced."
+            find build -maxdepth 4 -type f 2>/dev/null | head -80 || true
+            exit 1
+          fi
+          echo "IPA ready: $IPA_PATH"
+          echo "$IPA_PATH" > /tmp/ipa_path.txt
+
+      - name: Upload to App Store Connect
+        script: |
+          set -e
+          echo "=== Upload to App Store Connect ==="
+          IPA_PATH=""
+          if [ -f /tmp/ipa_path.txt ]; then
+            IPA_PATH=$(cat /tmp/ipa_path.txt)
+          fi
+          if [ -z "$IPA_PATH" ] || [ ! -f "$IPA_PATH" ]; then
+            IPA_PATH=$(find build -name "*.ipa" -type f 2>/dev/null | head -n1)
+          fi
+          if [ -z "$IPA_PATH" ] || [ ! -f "$IPA_PATH" ]; then
+            echo "ERROR: No IPA found under build/"
+            exit 1
+          fi
+          echo "Found IPA: $IPA_PATH"
+
+          if [ -z "$APP_STORE_CONNECT_API_KEY" ] || [ -z "$APP_STORE_CONNECT_API_ISSUER" ] || [ -z "$APP_STORE_CONNECT_PRIVATE_KEY" ]; then
+            echo "ERROR: Missing App Store Connect credentials in app_store_connect group."
+            exit 1
+          fi
+
+          mkdir -p "$HOME/.private_keys"
+          KEY_FILE="$HOME/.private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY}.p8"
+          printf '%s\n' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          xcrun altool --upload-app -f "$IPA_PATH" --type ios \
+            --apiKey "$APP_STORE_CONNECT_API_KEY" \
+            --apiIssuer "$APP_STORE_CONNECT_API_ISSUER"
+          echo "=== Upload finished ==="
+
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
+      - build/**/*.ipa
+
+    cache:
+      cache_paths:
+        - "$HOME/.pub-cache"
+        - "$HOME/Library/Caches/CocoaPods"
