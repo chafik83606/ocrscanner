@@ -18,9 +18,11 @@ workflows:
       - name: Configurer la signature Xcode
         script: xcode-project use-profiles
       - name: Dépendances Flutter
-        script: flutter pub get
+        script: |
+          flutter config --no-enable-swift-package-manager
+          flutter pub get
       - name: CocoaPods
-        script: find . -name "Podfile" -execdir pod install \;
+        script: cd ios && pod install --repo-update
       - name: Build IPA
         script: flutter build ipa
     artifacts:
