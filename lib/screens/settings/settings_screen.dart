@@ -19,23 +19,57 @@ class SettingsScreen extends StatelessWidget {
         children: [
           // ── Statut Premium ───────────────────────────────────────────────
           const _SectionHeader('Abonnement'),
-          ListTile(
-            leading: Icon(
-              premium.isPremium ? Icons.star : Icons.star_border,
-              color: premium.isPremium ? Colors.amber : null,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          premium.isPremium ? Icons.star : Icons.star_border,
+                          color: premium.isPremium ? Colors.amber : null,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                premium.isPremium
+                                    ? 'Premium actif'
+                                    : 'Version gratuite',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                premium.isPremium
+                                    ? 'Merci pour votre soutien !'
+                                    : '${premium.remainingFreeScans} scans gratuits restants',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (!premium.isPremium) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: () => context.push('/premium'),
+                          child: const Text('Passer en Premium'),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-            title: Text(
-              premium.isPremium ? 'Premium actif' : 'Version gratuite',
-            ),
-            subtitle: premium.isPremium
-                ? const Text('Merci pour votre soutien !')
-                : Text('${premium.remainingFreeScans} scans gratuits restants'),
-            trailing: premium.isPremium
-                ? null
-                : FilledButton(
-                    onPressed: () => context.push('/premium'),
-                    child: const Text('Upgrade'),
-                  ),
           ),
 
           const Divider(),
@@ -66,7 +100,7 @@ class SettingsScreen extends StatelessWidget {
           const ListTile(
             leading: Icon(Icons.info_outline),
             title: Text('Version'),
-            subtitle: Text('1.0.1'),
+            subtitle: Text(AppConstants.appVersion),
           ),
           ListTile(
             leading: const Icon(Icons.restore),

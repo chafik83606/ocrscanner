@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -55,11 +56,21 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<void> _pick(ImageSource source) async {
     try {
-      // Permissions
-      if (source == ImageSource.camera) {
+      // Android : demander la permission avant la caméra.
+      // iOS : image_picker affiche la boîte de dialogue système (évite un refus silencieux).
+      if (source == ImageSource.camera &&
+          !kIsWeb &&
+          defaultTargetPlatform == TargetPlatform.android) {
         final status = await Permission.camera.request();
         if (!status.isGranted) {
-          _showSnack('Permission caméra refusée');
+          if (status.isPermanentlyDenied) {
+            _showSnack(
+              'Autorisez la caméra dans les réglages de l\'appareil',
+            );
+            await openAppSettings();
+          } else {
+            _showSnack('Permission caméra refusée');
+          }
           return;
         }
       }

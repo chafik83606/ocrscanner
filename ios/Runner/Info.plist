@@ -14,6 +14,8 @@
 	<string>OCR Scanner a besoin d'accéder à vos photos pour importer des documents à numériser.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>OCR Scanner peut enregistrer des images exportées dans votre photothèque.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-3940256099942544~1458002511</string>
 	<key>SKAdNetworkItems</key>
