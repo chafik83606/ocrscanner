@@ -57,7 +57,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Achat unique – 4,99 €  (à vie)'),
+                  : const Text('Achat unique – 9,99 €  (à vie)'),
             ),
             const SizedBox(height: 12),
             OutlinedButton(

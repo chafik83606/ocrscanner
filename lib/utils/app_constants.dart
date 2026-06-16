@@ -4,7 +4,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 class AppConstants {
   AppConstants._();
 
-  static const String appVersion = '1.0.5';
+  static const String appVersion = '1.0.6';
 
   // ─── SharedPreferences keys ───────────────────────────────────────────────
   static const String keyScanCount = 'free_scan_count';
