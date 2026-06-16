@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/scan_provider.dart';
 import '../../providers/premium_provider.dart';
+import '../../services/export_service.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -76,7 +77,10 @@ class _CameraScreenState extends State<CameraScreen> {
       }
 
       final xFile = await _picker.pickImage(source: source, imageQuality: 90);
-      if (xFile == null) return;
+      if (xFile == null) {
+        _showSnack('Aucune image sélectionnée');
+        return;
+      }
 
       // Capture le contexte avant les awaits
       if (!mounted) return;
@@ -85,32 +89,42 @@ class _CameraScreenState extends State<CameraScreen> {
       final scanProvider = context.read<ScanProvider>();
       final language = premiumProvider.language;
 
-      // Recadrage (avec fallback auto vers la photo brute si le plugin échoue)
-      String finalPath = xFile.path;
-      try {
-        final cropped = await ImageCropper().cropImage(
-          sourcePath: xFile.path,
-          uiSettings: [
-            AndroidUiSettings(
-              toolbarTitle: 'Recadrer',
-              toolbarColor: primaryColor,
-              statusBarColor: primaryColor,
-              toolbarWidgetColor: Colors.white,
-              initAspectRatio: CropAspectRatioPreset.original,
-              lockAspectRatio: false,
-            ),
-            IOSUiSettings(title: 'Recadrer'),
-          ],
-        );
+      // Copie immédiate : le fichier temporaire du picker peut disparaître après le recadrage.
+      final savedPath = await ExportService.instance.saveImagePermanently(
+        xFile.path,
+      );
 
-        finalPath = cropped?.path ?? xFile.path;
-      } on PlatformException {
-        _showSnack('Recadrage indisponible: OCR lancé sur la photo originale');
+      if (!mounted) return;
+      setState(() => _isLoading = true);
+
+      // iOS : OCR direct après « Use Photo » (image_cropper bloquait silencieusement).
+      // Android : recadrage optionnel avant l'OCR.
+      String finalPath = savedPath;
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        try {
+          final cropped = await ImageCropper().cropImage(
+            sourcePath: savedPath,
+            uiSettings: [
+              AndroidUiSettings(
+                toolbarTitle: 'Recadrer',
+                toolbarColor: primaryColor,
+                statusBarColor: primaryColor,
+                toolbarWidgetColor: Colors.white,
+                initAspectRatio: CropAspectRatioPreset.original,
+                lockAspectRatio: false,
+              ),
+            ],
+          );
+          if (cropped?.path != null) {
+            finalPath = cropped!.path;
+          }
+        } on PlatformException {
+          _showSnack('Recadrage indisponible — OCR sur la photo originale');
+        }
       }
 
       // OCR
       if (!mounted) return;
-      setState(() => _isLoading = true);
 
       final scan = await scanProvider.performOcr(finalPath, language: language);
 
@@ -122,6 +136,12 @@ class _CameraScreenState extends State<CameraScreen> {
         return;
       }
 
+      if (scan.extractedText.isEmpty) {
+        _showSnack(
+          'Aucun texte détecté — essayez une photo plus nette, bien éclairée',
+        );
+      }
+
       // Incrémente le compteur gratuit
       await premiumProvider.recordScan();
 
@@ -131,10 +151,10 @@ class _CameraScreenState extends State<CameraScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       _showSnack('Erreur caméra : ${e.message ?? e.code}');
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showSnack('Une erreur est survenue pendant la capture');
+      _showSnack('Erreur : $e');
     }
   }
 
