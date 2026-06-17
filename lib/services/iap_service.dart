@@ -11,9 +11,25 @@ class IapService {
   IapService._();
   static final IapService instance = IapService._();
 
+  static const Set<String> _productIds = {
+    AppConstants.iapOneTimePurchase,
+    AppConstants.iapMonthlySubscription,
+  };
+
   final InAppPurchase _iap = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   Completer<IapPurchaseResult>? _pendingPurchase;
+
+  final Map<String, ProductDetails> _products = {};
+  bool _storeAvailable = false;
+
+  Map<String, ProductDetails> get products => Map.unmodifiable(_products);
+  bool get storeAvailable => _storeAvailable;
+  bool get hasLifetime => _products.containsKey(AppConstants.iapOneTimePurchase);
+  bool get hasMonthly =>
+      _products.containsKey(AppConstants.iapMonthlySubscription);
+
+  ProductDetails? product(String id) => _products[id];
 
   /// Démarre l'écoute du stream d'achats. À appeler au démarrage.
   void startListening(VoidCallback onPurchased) {
@@ -30,6 +46,30 @@ class IapService {
     _subscription = null;
   }
 
+  /// Charge les produits depuis l'App Store / Google Play (avec retry).
+  Future<void> loadProducts({int retries = 3}) async {
+    _storeAvailable = await _iap.isAvailable();
+    if (!_storeAvailable) {
+      _products.clear();
+      return;
+    }
+
+    for (var attempt = 0; attempt < retries; attempt++) {
+      final response = await _iap.queryProductDetails(_productIds);
+      _products
+        ..clear()
+        ..addEntries(
+          response.productDetails.map((p) => MapEntry(p.id, p)),
+        );
+
+      if (_products.isNotEmpty) return;
+
+      if (attempt < retries - 1) {
+        await Future<void>.delayed(Duration(milliseconds: 800 * (attempt + 1)));
+      }
+    }
+  }
+
   Future<void> _handlePurchase(
     PurchaseDetails purchase,
     VoidCallback onPurchased,
@@ -37,7 +77,6 @@ class IapService {
     switch (purchase.status) {
       case PurchaseStatus.purchased:
       case PurchaseStatus.restored:
-        // TODO: valider le reçu côté serveur en production
         await PremiumService.instance.setPremium(true);
         onPurchased();
         _completePending(IapPurchaseResult.success);
@@ -61,23 +100,17 @@ class IapService {
     _pendingPurchase = null;
   }
 
-  /// Lance l'achat unique (lifetime).
   Future<IapPurchaseResult> buyLifetime() =>
       _buy(AppConstants.iapOneTimePurchase);
 
-  /// Lance l'abonnement mensuel (non-consommable côté plugin).
   Future<IapPurchaseResult> buyMonthly() =>
       _buy(AppConstants.iapMonthlySubscription);
 
-  /// Restaure les achats précédents et indique le résultat.
   Future<IapRestoreResult> restorePurchases() async {
-    final available = await _iap.isAvailable();
-    if (!available) return IapRestoreResult.unavailable;
+    if (!await _iap.isAvailable()) return IapRestoreResult.unavailable;
 
     final wasPremium = await PremiumService.instance.isPremium();
     await _iap.restorePurchases();
-
-    // Laisse le temps au purchaseStream de traiter les achats restaurés.
     await Future<void>.delayed(const Duration(milliseconds: 900));
 
     final isPremium = await PremiumService.instance.isPremium();
@@ -87,20 +120,17 @@ class IapService {
   }
 
   Future<IapPurchaseResult> _buy(String productId) async {
-    final available = await _iap.isAvailable();
-    if (!available) return IapPurchaseResult.unavailable;
+    if (!await _iap.isAvailable()) return IapPurchaseResult.unavailable;
 
-    final response = await _iap.queryProductDetails({productId});
-    if (response.notFoundIDs.isNotEmpty || response.productDetails.isEmpty) {
-      return IapPurchaseResult.productNotFound;
+    if (!_products.containsKey(productId)) {
+      await loadProducts();
     }
 
-    _pendingPurchase = Completer<IapPurchaseResult>();
-    final purchaseParam = PurchaseParam(
-      productDetails: response.productDetails.first,
-    );
+    final details = _products[productId];
+    if (details == null) return IapPurchaseResult.productNotFound;
 
-    // Abonnements et achats uniques : buyNonConsumable (API officielle du plugin).
+    _pendingPurchase = Completer<IapPurchaseResult>();
+    final purchaseParam = PurchaseParam(productDetails: details);
     final started = await _iap.buyNonConsumable(purchaseParam: purchaseParam);
     if (!started) {
       _pendingPurchase = null;

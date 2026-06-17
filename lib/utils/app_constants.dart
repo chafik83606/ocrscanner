@@ -4,7 +4,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 class AppConstants {
   AppConstants._();
 
-  static const String appVersion = '1.0.7';
+  static const String appVersion = '1.0.8';
 
   // ─── SharedPreferences keys ───────────────────────────────────────────────
   static const String keyScanCount = 'free_scan_count';
@@ -20,6 +20,14 @@ class AppConstants {
 
   /// Abonnement mensuel
   static const String iapMonthlySubscription = 'ocr_scanner_premium_monthly';
+
+  // ─── Liens légaux (obligatoires App Store pour abonnements) ─────────────
+  static const String privacyPolicyUrl =
+      'https://chafik83606.github.io/ocrscanner/';
+
+  /// EULA standard Apple (ou remplacer par une URL personnalisée).
+  static const String termsOfUseUrl =
+      'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
   // ─── AdMob IDs (remplacer par les vrais IDs en production) ────────────────
   /// App ID Android — voir aussi android/app/src/main/res/values/strings.xml

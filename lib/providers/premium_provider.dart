@@ -27,6 +27,7 @@ class PremiumProvider extends ChangeNotifier {
   /// Initialisation au démarrage.
   Future<void> init() async {
     await reloadPremium();
+    await IapService.instance.loadProducts();
 
     IapService.instance.startListening(() async {
       await reloadPremium();
