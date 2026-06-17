@@ -31,8 +31,8 @@ class IapMessages {
     if (!kIsWeb && Platform.isAndroid) {
       return 'Produit introuvable sur Google Play.\n'
           'Créez les produits in-app dans la Play Console :\n'
-          '• ocr_scanner_premium_lifetime\n'
-          '• ocr_scanner_premium_monthly\n'
+          '• ocr_scanner_premium_timelife\n'
+          '• ocr_scanner_premium_30j\n'
           '(statut Actif, même package com.ctre2.ocrscanner)';
     }
     return 'Offre Premium indisponible. Réessayez plus tard.';

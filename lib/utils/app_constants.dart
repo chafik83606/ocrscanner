@@ -4,7 +4,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 class AppConstants {
   AppConstants._();
 
-  static const String appVersion = '1.0.9';
+  static const String appVersion = '1.0.10';
 
   // ─── SharedPreferences keys ───────────────────────────────────────────────
   static const String keyScanCount = 'free_scan_count';
@@ -16,10 +16,10 @@ class AppConstants {
 
   // ─── Produits in-app ─────────────────────────────────────────────────────
   /// Achat unique
-  static const String iapOneTimePurchase = 'ocr_scanner_premium_lifetime';
+  static const String iapOneTimePurchase = 'ocr_scanner_premium_timelife';
 
   /// Abonnement mensuel
-  static const String iapMonthlySubscription = 'ocr_scanner_premium_monthly';
+  static const String iapMonthlySubscription = 'ocr_scanner_premium_30j';
 
   // ─── Liens légaux (obligatoires App Store pour abonnements) ─────────────
   static const String privacyPolicyUrl =
