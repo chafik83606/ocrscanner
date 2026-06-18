@@ -8,6 +8,7 @@ import '../../providers/premium_provider.dart';
 import '../../services/iap_service.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/iap_messages.dart';
+import '../../utils/iap_price_formatter.dart';
 
 class PremiumScreen extends StatefulWidget {
   const PremiumScreen({super.key});
@@ -86,8 +87,12 @@ class _PremiumScreenState extends State<PremiumScreen> {
               _productCard(
                 title: lifetime?.title ?? 'Premium à vie',
                 subtitle: 'Achat unique, accès permanent',
-                price: lifetime?.price ?? '9,99 €',
-                buttonLabel: 'Achat unique – ${lifetime?.price ?? '9,99 €'} (à vie)',
+                price: lifetime != null
+                    ? IapPriceFormatter.format(lifetime)
+                    : '9,99 €',
+                buttonLabel: lifetime != null
+                    ? IapPriceFormatter.lifetimeButton(lifetime)
+                    : 'Achat unique – 9,99 € (à vie)',
                 filled: true,
                 onPressed: _busy
                     ? null
@@ -99,9 +104,12 @@ class _PremiumScreenState extends State<PremiumScreen> {
               _productCard(
                 title: monthly?.title ?? 'Premium mensuel',
                 subtitle: 'Abonnement avec renouvellement automatique — 1 mois',
-                price: monthly?.price ?? '1,99 € / mois',
-                buttonLabel:
-                    'Abonnement – ${monthly?.price ?? '1,99 €'} / mois',
+                price: monthly != null
+                    ? IapPriceFormatter.formatMonthly(monthly)
+                    : '1,99 € / mois',
+                buttonLabel: monthly != null
+                    ? IapPriceFormatter.monthlyButton(monthly)
+                    : 'Abonnement – 1,99 € / mois',
                 filled: false,
                 onPressed: _busy
                     ? null
