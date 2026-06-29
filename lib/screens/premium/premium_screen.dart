@@ -9,6 +9,7 @@ import '../../services/iap_service.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/iap_messages.dart';
 import '../../utils/iap_price_formatter.dart';
+import '../../utils/iap_product_ids.dart';
 
 class PremiumScreen extends StatefulWidget {
   const PremiumScreen({super.key});
@@ -36,8 +37,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
   @override
   Widget build(BuildContext context) {
     final iap = IapService.instance;
-    final lifetime = iap.product(AppConstants.iapOneTimePurchase);
-    final monthly = iap.product(AppConstants.iapMonthlySubscription);
+    final lifetime = iap.product(IapProductIds.lifetime);
+    final monthly = iap.product(IapProductIds.monthly);
     final productsReady = iap.hasLifetime && iap.hasMonthly;
 
     return Scaffold(

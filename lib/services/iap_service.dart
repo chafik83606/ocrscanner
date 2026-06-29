@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../models/iap_result.dart';
-import '../utils/app_constants.dart';
+import '../utils/iap_product_ids.dart';
 import 'premium_service.dart';
 
 /// Service d'achats in-app (achat unique + abonnement mensuel).
@@ -11,10 +11,7 @@ class IapService {
   IapService._();
   static final IapService instance = IapService._();
 
-  static const Set<String> _productIds = {
-    AppConstants.iapOneTimePurchase,
-    AppConstants.iapMonthlySubscription,
-  };
+  static final Set<String> _productIds = IapProductIds.all;
 
   final InAppPurchase _iap = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
@@ -25,9 +22,8 @@ class IapService {
 
   Map<String, ProductDetails> get products => Map.unmodifiable(_products);
   bool get storeAvailable => _storeAvailable;
-  bool get hasLifetime => _products.containsKey(AppConstants.iapOneTimePurchase);
-  bool get hasMonthly =>
-      _products.containsKey(AppConstants.iapMonthlySubscription);
+  bool get hasLifetime => _products.containsKey(IapProductIds.lifetime);
+  bool get hasMonthly => _products.containsKey(IapProductIds.monthly);
 
   ProductDetails? product(String id) => _products[id];
 
@@ -100,11 +96,9 @@ class IapService {
     _pendingPurchase = null;
   }
 
-  Future<IapPurchaseResult> buyLifetime() =>
-      _buy(AppConstants.iapOneTimePurchase);
+  Future<IapPurchaseResult> buyLifetime() => _buy(IapProductIds.lifetime);
 
-  Future<IapPurchaseResult> buyMonthly() =>
-      _buy(AppConstants.iapMonthlySubscription);
+  Future<IapPurchaseResult> buyMonthly() => _buy(IapProductIds.monthly);
 
   Future<IapRestoreResult> restorePurchases() async {
     if (!await _iap.isAvailable()) return IapRestoreResult.unavailable;

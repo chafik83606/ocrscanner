@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 
 import '../models/iap_result.dart';
+import 'iap_product_ids.dart';
 
 /// Messages utilisateur pour les achats in-app.
 class IapMessages {
@@ -31,8 +32,8 @@ class IapMessages {
     if (!kIsWeb && Platform.isAndroid) {
       return 'Produit introuvable sur Google Play.\n'
           'Créez les produits in-app dans la Play Console :\n'
-          '• ocr_scanner_premium_timelife\n'
-          '• ocr_scanner_premium_30j\n'
+          '• ${IapProductIds.androidLifetime}\n'
+          '• ${IapProductIds.androidMonthly}\n'
           '(statut Actif, même package com.ctre2.ocrscanner)';
     }
     return 'Offre Premium indisponible. Réessayez plus tard.';

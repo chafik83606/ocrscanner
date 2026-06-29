@@ -14,12 +14,7 @@ class AppConstants {
   // ─── Limites gratuites ────────────────────────────────────────────────────
   static const int freeScansAllowed = 5;
 
-  // ─── Produits in-app ─────────────────────────────────────────────────────
-  /// Achat unique
-  static const String iapOneTimePurchase = 'ocr_scanner_premium_timelife';
-
-  /// Abonnement mensuel
-  static const String iapMonthlySubscription = 'ocr_scanner_premium_30j';
+  // ─── Produits in-app : voir lib/utils/iap_product_ids.dart ───────────────
 
   // ─── Liens légaux (obligatoires App Store pour abonnements) ─────────────
   static const String privacyPolicyUrl =
