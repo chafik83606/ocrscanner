@@ -136,14 +136,14 @@ class _CameraScreenState extends State<CameraScreen> {
         return;
       }
 
-      if (scan.extractedText.isEmpty) {
+      if (scan.extractedText.trim().isEmpty) {
         _showSnack(
           'Aucun texte détecté — essayez une photo plus nette, bien éclairée',
         );
+      } else {
+        // Ne compte pas les scans sans texte détecté.
+        await premiumProvider.recordScan();
       }
-
-      // Incrémente le compteur gratuit
-      await premiumProvider.recordScan();
 
       if (!mounted) return;
       context.pushReplacement('/result', extra: scan);

@@ -18,6 +18,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
   List<ScanModel>? _results;
 
   @override
+  void initState() {
+    super.initState();
+    _searchCtrl.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();

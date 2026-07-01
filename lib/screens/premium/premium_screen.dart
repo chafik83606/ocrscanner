@@ -276,6 +276,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
     'Export PDF, TXT, impression',
     'Recherche dans les scans',
     'Multi-langues : FR, EN, ES, DE',
-    'Suppression des publicités',
+    'Extraction de données illimitée',
   ];
 }

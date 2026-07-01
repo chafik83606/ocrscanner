@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:image_picker_android/image_picker_android.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 
@@ -21,9 +20,6 @@ void _configureAndroidPhotoPicker() {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _configureAndroidPhotoPicker();
-
-  // Initialise AdMob
-  await MobileAds.instance.initialize();
 
   runApp(
     MultiProvider(

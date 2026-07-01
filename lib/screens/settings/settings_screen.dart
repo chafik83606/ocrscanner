@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../providers/premium_provider.dart';
 import '../../utils/app_constants.dart';
@@ -95,6 +96,33 @@ class SettingsScreen extends StatelessWidget {
 
           const Divider(),
 
+          // ── Légal ────────────────────────────────────────────────────────
+          const _SectionHeader('Informations légales'),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Politique de confidentialité'),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => _openUrl(context, AppConstants.privacyPolicyUrl),
+          ),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Conditions d\'utilisation (EULA)'),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => _openUrl(context, AppConstants.termsOfUseUrl),
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete_outline),
+            title: const Text('Suppression des données'),
+            subtitle: const Text('Comment demander la suppression de vos données'),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => _openUrl(
+              context,
+              '${AppConstants.privacyPolicyUrl}delete-data.html',
+            ),
+          ),
+
+          const Divider(),
+
           // ── À propos ─────────────────────────────────────────────────────
           const _SectionHeader('À propos'),
           const ListTile(
@@ -138,6 +166,16 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
     if (selected != null) await premium.setLanguage(selected);
+  }
+
+  Future<void> _openUrl(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir le lien.')),
+      );
+    }
   }
 }
 

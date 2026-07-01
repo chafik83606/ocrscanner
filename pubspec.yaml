@@ -1,7 +1,7 @@
 name: ocr_scanner
 description: Application de scan de documents avec OCR, version gratuite et Premium.
 publish_to: 'none'
-version: 1.0.12+16
+version: 1.0.14+19
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -38,9 +38,6 @@ dependencies:
   share_plus: ^9.0.0
   pdf: ^3.10.8
   printing: ^5.12.0
-
-  # Publicités
-  google_mobile_ads: ^5.1.0
 
   # Achats in-app
   in_app_purchase: ^3.2.0

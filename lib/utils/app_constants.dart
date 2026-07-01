@@ -1,10 +1,14 @@
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
-/// Constantes de l'application (clés SharedPreferences, IDs AdMob, etc.)
+/// Constantes de l'application (clés SharedPreferences, etc.)
 class AppConstants {
   AppConstants._();
 
-  static const String appVersion = '1.0.12';
+  static const String appVersion = '1.0.14';
+
+  // ─── Extraction de données (limites version gratuite) ───────────────────
+  static const int freeExtractionFilterLimit = 5;
+  static const int freeExtractionLabelLimit = 2;
 
   // ─── SharedPreferences keys ───────────────────────────────────────────────
   static const String keyScanCount = 'free_scan_count';
@@ -23,27 +27,6 @@ class AppConstants {
   /// EULA standard Apple (ou remplacer par une URL personnalisée).
   static const String termsOfUseUrl =
       'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
-
-  // ─── AdMob IDs (remplacer par les vrais IDs en production) ────────────────
-  /// App ID Android — voir aussi android/app/src/main/res/values/strings.xml
-  static const String admobAppIdAndroid =
-      'ca-app-pub-3940256099942544~3347511713';
-
-  /// App ID iOS — voir aussi ios/Runner/Info.plist (GADApplicationIdentifier)
-  static const String admobAppIdIos =
-      'ca-app-pub-3940256099942544~1458002511';
-
-  /// Bannière - Android test ID
-  static const String admobBannerAndroid =
-      'ca-app-pub-3940256099942544/6300978111';
-
-  /// Bannière - iOS test ID
-  static const String admobBannerIos =
-      'ca-app-pub-3940256099942544/2934735716';
-
-  /// Interstitiel - Android test ID
-  static const String admobInterstitialAndroid =
-      'ca-app-pub-3940256099942544/1033173712';
 
   // ─── Langues OCR supportées ───────────────────────────────────────────────
   static const Map<String, String> ocrLanguages = {

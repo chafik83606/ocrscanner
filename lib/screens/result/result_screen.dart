@@ -8,7 +8,7 @@ import '../../models/scan_model.dart';
 import '../../providers/premium_provider.dart';
 import '../../providers/scan_provider.dart';
 import '../../services/export_service.dart';
-import '../../widgets/ad_banner_widget.dart';
+import '../../widgets/extracted_data_panel.dart';
 
 class ResultScreen extends StatefulWidget {
   const ResultScreen({super.key, required this.scan});
@@ -18,9 +18,11 @@ class ResultScreen extends StatefulWidget {
   State<ResultScreen> createState() => _ResultScreenState();
 }
 
-class _ResultScreenState extends State<ResultScreen> {
+class _ResultScreenState extends State<ResultScreen>
+    with SingleTickerProviderStateMixin {
   late ScanModel _scan;
   bool _saved = false;
+  late TabController _tabController;
 
   @override
   void initState() {
@@ -28,6 +30,21 @@ class _ResultScreenState extends State<ResultScreen> {
     _scan =
         widget.scan ??
         ScanModel(imagePath: '', extractedText: '', language: 'fr');
+    _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoSave());
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _maybeAutoSave() async {
+    if (_saved || !mounted) return;
+    final premium = context.read<PremiumProvider>();
+    if (!premium.isPremium || _scan.extractedText.trim().isEmpty) return;
+    await _saveScan(silent: true);
   }
 
   @override
@@ -37,12 +54,19 @@ class _ResultScreenState extends State<ResultScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Résultat'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Texte'),
+            Tab(text: 'Données'),
+          ],
+        ),
         actions: [
           if (premium.isPremium && !_saved)
             IconButton(
               icon: const Icon(Icons.save),
               tooltip: 'Sauvegarder',
-              onPressed: _saveScan,
+              onPressed: () => _saveScan(),
             ),
           if (_saved)
             const Padding(
@@ -51,118 +75,108 @@ class _ResultScreenState extends State<ResultScreen> {
             ),
         ],
       ),
-      body: Column(
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          Expanded(
-            child: SingleChildScrollView(
+          _buildTextTab(context, premium),
+          ExtractedDataPanel(text: _scan.extractedText),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextTab(BuildContext context, PremiumProvider premium) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_scan.imagePath.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                File(_scan.imagePath),
+                height: 220,
+                fit: BoxFit.cover,
+              ),
+            ),
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Image scannée ──────────────────────────────────────
-                  if (_scan.imagePath.isNotEmpty)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        File(_scan.imagePath),
-                        height: 220,
-                        fit: BoxFit.cover,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Texte extrait',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                    ),
-                  const SizedBox(height: 16),
-
-                  // ── Texte extrait ──────────────────────────────────────
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Texte extrait',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy),
-                                tooltip: 'Copier',
-                                onPressed: _copyText,
-                              ),
-                            ],
-                          ),
-                          const Divider(),
-                          SelectableText(
-                            _scan.extractedText.isEmpty
-                                ? '(Aucun texte détecté)'
-                                : _scan.extractedText,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
+                      IconButton(
+                        icon: const Icon(Icons.copy),
+                        tooltip: 'Copier',
+                        onPressed: _copyText,
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-
-                  // ── Boutons d'export (Premium) ─────────────────────────
-                  if (premium.isPremium) ...[
-                    Text(
-                      'Exporter',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.picture_as_pdf),
-                          label: const Text('PDF'),
-                          onPressed: () =>
-                              ExportService.instance.exportAsPdf(_scan),
-                        ),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.text_snippet),
-                          label: const Text('TXT'),
-                          onPressed: () =>
-                              ExportService.instance.exportAsTxt(_scan),
-                        ),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.print),
-                          label: const Text('Imprimer'),
-                          onPressed: () =>
-                              ExportService.instance.printPdf(_scan),
-                        ),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.share),
-                          label: const Text('Partager'),
-                          onPressed: () => ExportService.instance.shareText(
-                            _scan.extractedText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ] else ...[
-                    // Bouton upgrade + partage texte uniquement
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.share),
-                      label: const Text('Partager le texte'),
-                      onPressed: () =>
-                          ExportService.instance.shareText(_scan.extractedText),
-                    ),
-                    const SizedBox(height: 8),
-                    FilledButton.icon(
-                      icon: const Icon(Icons.star),
-                      label: const Text('Passer en Premium pour exporter'),
-                      onPressed: () => context.push('/premium'),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
+                  const Divider(),
+                  SelectableText(
+                    _scan.extractedText.isEmpty
+                        ? '(Aucun texte détecté)'
+                        : _scan.extractedText,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ],
               ),
             ),
           ),
-          if (!premium.isPremium) const AdBannerWidget(),
+          const SizedBox(height: 16),
+          if (premium.isPremium) ...[
+            Text('Exporter', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.picture_as_pdf),
+                  label: const Text('PDF'),
+                  onPressed: () => ExportService.instance.exportAsPdf(_scan),
+                ),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.text_snippet),
+                  label: const Text('TXT'),
+                  onPressed: () => ExportService.instance.exportAsTxt(_scan),
+                ),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.print),
+                  label: const Text('Imprimer'),
+                  onPressed: () => ExportService.instance.printPdf(_scan),
+                ),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.share),
+                  label: const Text('Partager'),
+                  onPressed: () =>
+                      ExportService.instance.shareText(_scan.extractedText),
+                ),
+              ],
+            ),
+          ] else ...[
+            OutlinedButton.icon(
+              icon: const Icon(Icons.share),
+              label: const Text('Partager le texte'),
+              onPressed: () =>
+                  ExportService.instance.shareText(_scan.extractedText),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              icon: const Icon(Icons.star),
+              label: const Text('Passer en Premium pour exporter'),
+              onPressed: () => context.push('/premium'),
+            ),
+          ],
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -176,12 +190,38 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  Future<void> _saveScan() async {
-    await context.read<ScanProvider>().saveScan(_scan);
+  Future<void> _saveScan({bool silent = false}) async {
+    var scanToSave = _scan;
+    if (scanToSave.title == null || scanToSave.title!.trim().isEmpty) {
+      scanToSave = scanToSave.copyWith(
+        title: _autoTitle(scanToSave.extractedText),
+      );
+    }
+    await context.read<ScanProvider>().saveScan(scanToSave);
     if (!mounted) return;
-    setState(() => _saved = true);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Scan sauvegardé')));
+    setState(() {
+      _scan = scanToSave;
+      _saved = true;
+    });
+    if (!silent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Scan sauvegardé')),
+      );
+    }
+  }
+
+  String _autoTitle(String text) {
+    final line = text
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .cast<String>()
+        .firstOrNull;
+    if (line == null) {
+      final now = DateTime.now();
+      return 'Scan ${now.day.toString().padLeft(2, '0')}/'
+          '${now.month.toString().padLeft(2, '0')}/${now.year}';
+    }
+    return line.length > 48 ? '${line.substring(0, 48)}…' : line;
   }
 }

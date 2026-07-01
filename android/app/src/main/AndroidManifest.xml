@@ -11,6 +11,9 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" tools:node="remove" />
 
+    <!-- Pas de publicité : empêche toute lib tierce d'ajouter l'ID pub au manifeste fusionné -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+
     <application
         android:label="OCR Scanner"
         android:name="${applicationName}"
@@ -51,11 +54,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-
-        <!-- AdMob App ID -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="@string/admob_app_id" />
 
         <!-- ML Kit : modèle OCR Latin téléchargé à la demande -->
         <meta-data

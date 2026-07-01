@@ -6,7 +6,6 @@ import '../../providers/premium_provider.dart';
 import '../../providers/scan_provider.dart';
 import '../../models/scan_model.dart';
 import '../../widgets/scan_card.dart';
-import '../../widgets/ad_banner_widget.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -21,14 +20,17 @@ class HomeScreen extends StatelessWidget {
         title: const Text('OCR Scanner'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: 'Historique',
+            icon: Icon(premium.isPremium ? Icons.history : Icons.lock_outline),
+            tooltip: premium.isPremium
+                ? 'Historique'
+                : 'Historique — fonction Premium',
             onPressed: premium.isPremium
                 ? () => context.push('/history')
                 : () => context.push('/premium'),
           ),
           IconButton(
             icon: const Icon(Icons.settings),
+            tooltip: 'Paramètres',
             onPressed: () => context.push('/settings'),
           ),
         ],
@@ -44,9 +46,6 @@ class HomeScreen extends StatelessWidget {
                 ? _ScanList(scans: scanProv.scans)
                 : _EmptyState(isPremium: premium.isPremium),
           ),
-
-          // ── Bannière pub (version gratuite) ─────────────────────────────
-          if (!premium.isPremium) const AdBannerWidget(),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -101,19 +100,19 @@ class _FreeScansBar extends StatelessWidget {
         children: [
           Icon(remaining == 0 ? Icons.lock : Icons.info_outline, size: 16),
           const SizedBox(width: 8),
-          Text(
-            remaining == 0
-                ? 'Limite atteinte – passez en Premium'
-                : '$remaining scan(s) gratuit(s) restant(s)',
-            style: Theme.of(context).textTheme.labelMedium,
+          Expanded(
+            child: Text(
+              remaining == 0
+                  ? 'Limite atteinte – passez en Premium'
+                  : '$remaining scan(s) gratuit(s) restant(s)',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
           ),
-          if (remaining == 0) ...[
-            const Spacer(),
+          if (remaining == 0)
             TextButton(
               onPressed: () => GoRouter.of(context).push('/premium'),
-              child: const Text('Upgrade'),
+              child: const Text('Passer en Premium'),
             ),
-          ],
         ],
       ),
     );
